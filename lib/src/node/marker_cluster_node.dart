@@ -140,4 +140,8 @@ class MarkerClusterNode extends MarkerOrClusterNode {
 
     return Bounds(ne, sw);
   }
+
+  bool containsMarker(Marker marker) {
+    return markers.any((node) => node.marker == marker);
+  }
 }

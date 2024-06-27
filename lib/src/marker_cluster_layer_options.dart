@@ -81,12 +81,17 @@ class PopupOptions {
   /// For more information and other options see [MarkerTapBehavior].
   final MarkerTapBehavior markerTapBehavior;
 
+  /// Sow popup initially or not
+  /// Defaults to false
+  final bool showPopupInitially;
+
   PopupOptions({
     required this.popupBuilder,
     this.popupSnap = PopupSnap.markerTop,
     PopupController? popupController,
     this.popupAnimation,
     this.markerRotate = false,
+    this.showPopupInitially = false,
     MarkerTapBehavior? markerTapBehavior,
     this.buildPopupOnHover = false,
     this.timeToShowPopupOnHover = 300,

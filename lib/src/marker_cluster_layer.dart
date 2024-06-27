@@ -49,6 +49,8 @@ class _MarkerClusterLayerState extends State<MarkerClusterLayer>
 
   PolygonLayer? _polygon;
   MarkerClusterNode? spiderfyCluster;
+  Set<Marker> _previouslyUnclusteredMarkers = {};
+  bool _initialPopupsShown = false;
 
   _MarkerClusterLayerState();
 
@@ -157,6 +159,13 @@ class _MarkerClusterLayerState extends State<MarkerClusterLayer>
 
   @override
   Widget build(BuildContext context) {
+    if (!_initialPopupsShown &&
+        widget.options.popupOptions?.showPopupInitially == true) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showInitialPopups();
+      });
+      _initialPopupsShown = true;
+    }
     final popupOptions = widget.options.popupOptions;
     return Stack(
       children: [
@@ -177,6 +186,41 @@ class _MarkerClusterLayerState extends State<MarkerClusterLayer>
           )
       ],
     );
+  }
+
+  void _showInitialPopups() {
+    final unclusteredMarkers = _getUnclusteredMarkers();
+    widget.options.popupOptions?.popupController
+        .showPopupsAlsoFor(unclusteredMarkers);
+    _previouslyUnclusteredMarkers = Set.from(unclusteredMarkers);
+  }
+
+  List<Marker> _getUnclusteredMarkers() {
+    final currentZoom = widget.mapCamera.zoom.ceil();
+    return widget.options.markers
+        .where((marker) => _clusterManager.isUnclustered(marker, currentZoom))
+        .toList();
+  }
+
+  void _updatePopups() {
+    final currentUnclusteredMarkers = _getUnclusteredMarkers();
+    final newlyUnclusteredMarkers = currentUnclusteredMarkers
+        .toSet()
+        .difference(_previouslyUnclusteredMarkers);
+    final newlyClusteredMarkers = _previouslyUnclusteredMarkers
+        .difference(currentUnclusteredMarkers.toSet());
+
+    if (newlyUnclusteredMarkers.isNotEmpty) {
+      widget.options.popupOptions?.popupController
+          .showPopupsAlsoFor(newlyUnclusteredMarkers.toList());
+    }
+
+    if (newlyClusteredMarkers.isNotEmpty) {
+      widget.options.popupOptions?.popupController
+          .hidePopupsOnlyFor(newlyClusteredMarkers.toList());
+    }
+
+    _previouslyUnclusteredMarkers = currentUnclusteredMarkers.toSet();
   }
 
   Widget _buildMarker({
@@ -573,6 +617,7 @@ class _MarkerClusterLayerState extends State<MarkerClusterLayer>
             if (mounted) {
               setState(() {
                 _hidePolygon();
+                _updatePopups();
               });
             }
           },

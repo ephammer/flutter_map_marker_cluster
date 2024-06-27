@@ -158,4 +158,31 @@ class ClusterManager {
           Function(MarkerOrClusterNode) fn) =>
       _topClusterLevel.recursively(
           zoomLevel, disableClusteringAtZoom, recursionBounds, fn);
+
+  bool isUnclustered(Marker marker, int currentZoom) {
+    if (currentZoom < minZoom ||
+        currentZoom >= _gridClusters.length + minZoom) {
+      return false;
+    }
+
+    final markerPoint =
+        mapCalculator.project(marker.point, zoom: currentZoom.toDouble());
+    final grid = _gridUnclustered[currentZoom - minZoom];
+
+    // Check if the marker is in the unclustered grid for the current zoom level
+    final nearestObject = grid.getNearObject(markerPoint);
+    if (nearestObject != null && nearestObject.marker == marker) {
+      return true;
+    }
+
+    // If not found in unclustered grid, check if it's in any cluster
+    final clusterGrid = _gridClusters[currentZoom - minZoom];
+    final nearestCluster = clusterGrid.getNearObject(markerPoint);
+    if (nearestCluster != null) {
+      return !nearestCluster.containsMarker(marker);
+    }
+
+    // If not found in any grid, check the top cluster level
+    return !_topClusterLevel.containsMarker(marker);
+  }
 }
